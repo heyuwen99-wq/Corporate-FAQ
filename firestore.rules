@@ -1,0 +1,167 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - role: string (required, 'admin' | 'employee')
+    //   - displayName: string (optional)
+    //   - createdAt: string (optional)
+    //
+    // Collection: knowledgeBases
+    // Document ID: {kbId}
+    // Fields:
+    //   - id: string (optional)
+    //   - name: string (required)
+    //   - description: string (optional)
+    //   - fileCount: number (optional)
+    //   - indexCount: number (optional)
+    //   - createdAt: string (optional)
+    //   - createdBy: string (required)
+    //
+    // Collection: knowledgeBases/{kbId}/files
+    // Document ID: {fileId}
+    // Fields:
+    //   - id: string (optional)
+    //   - kbId: string (required)
+    //   - name: string (required)
+    //   - status: bool (optional)
+    //   - createdAt: string (optional)
+    //   - uploadedBy: string (required)
+    //
+    // Collection: chats
+    // Document ID: {chatId}
+    // Fields:
+    //   - id: string (optional)
+    //   - userId: string (required)
+    //   - title: string (required)
+    //   - lastMessageAt: string (optional)
+    //   - createdAt: string (optional)
+    //
+    // Collection: chats/{chatId}/messages
+    // Document ID: {messageId}
+    // Fields:
+    //   - id: string (optional)
+    //   - chatId: string (required)
+    //   - role: string (required, 'user' | 'assistant')
+    //   - content: string (required)
+    //   - timestamp: string (optional)
+    //   - references: list (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        (request.auth.token.email == "heyuwen99@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isEmployee() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee';
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'role', 'displayName', 'createdAt']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.email is string && isValidEmail(data.email) &&
+             data.role in ['admin', 'employee'];
+    }
+
+    function isValidKnowledgeBase(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'description', 'fileCount', 'indexCount', 'createdAt', 'createdBy']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.createdBy is string && data.createdBy == request.auth.uid;
+    }
+
+    function isValidFile(data) {
+      return hasOnlyAllowedFields(['id', 'kbId', 'name', 'status', 'createdAt', 'uploadedBy']) &&
+             data.kbId is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 255 &&
+             data.uploadedBy is string && data.uploadedBy == request.auth.uid;
+    }
+
+    function isValidChat(data) {
+      return hasOnlyAllowedFields(['id', 'userId', 'title', 'lastMessageAt', 'createdAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200;
+    }
+
+    function isValidMessage(data) {
+      return hasOnlyAllowedFields(['id', 'chatId', 'role', 'content', 'timestamp', 'references']) &&
+             data.chatId is string &&
+             data.role in ['user', 'assistant'] &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000;
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'employee' || isAdmin());
+      allow update: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /knowledgeBases/{kbId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidKnowledgeBase(request.resource.data);
+      allow update: if isAdmin() && isValidKnowledgeBase(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /files/{fileId} {
+        allow read: if isAuthenticated();
+        allow create: if isAdmin() && isValidFile(request.resource.data);
+        allow update: if isAdmin() && isValidFile(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidChat(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin()) && isValidChat(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid || isAdmin());
+        allow create: if isAuthenticated() && (get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid || isAdmin()) && isValidMessage(request.resource.data);
+      }
+    }
+  }
+}

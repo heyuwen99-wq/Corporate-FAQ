@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role and basic info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User email" },
+        "role": { "type": "string", "enum": ["admin", "employee"], "description": "User role" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "KnowledgeBase": {
+      "title": "Knowledge Base",
+      "description": "A collection of indexed documents",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "fileCount": { "type": "integer" },
+        "indexCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string", "description": "UID of the admin who created it" }
+      },
+      "required": ["name", "createdBy"]
+    },
+    "File": {
+      "title": "File Metadata",
+      "description": "Metadata for a file within a knowledge base",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "kbId": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uploadedBy": { "type": "string" }
+      },
+      "required": ["kbId", "name", "uploadedBy"]
+    },
+    "Chat": {
+      "title": "Chat Session",
+      "description": "A conversation between a user and the AI",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title"]
+    },
+    "Message": {
+      "title": "Chat Message",
+      "description": "A single message in a chat session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "references": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["chatId", "role", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/knowledgeBases/{kbId}": {
+      "schema": "KnowledgeBase",
+      "description": "Knowledge base metadata"
+    },
+    "/knowledgeBases/{kbId}/files/{fileId}": {
+      "schema": "File",
+      "description": "Files within a knowledge base"
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Chat session metadata"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages in a chat session"
+    }
+  }
+}

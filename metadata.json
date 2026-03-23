@@ -1,0 +1,5 @@
+{
+  "name": "企业智能知识库问答系统",
+  "description": "一个企业内部的智能问答系统原型，包含知识库管理后台和AI助手聊天界面。",
+  "requestFramePermissions": []
+}
