@@ -3232,23 +3232,14 @@ function ChatInterface({ onLogout, currentChatId, setCurrentChatId, onNewChat, c
                       <h3 className="font-bold text-slate-800 truncate">原文预览: {selectedReference}</h3>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">切片定位</p>
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <p className="text-xs text-blue-700 leading-relaxed">第二条 在本市行政区域内制定和实施城市规划，在城市规划区内进行建设，必须遵守本条例。</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">原文档内容</p>
-                        <div className="text-xs text-slate-600 leading-relaxed space-y-3">
-                          <p>第一章 总则</p>
-                          <p>第一条 为了加强城市规划管理，保障城市规划的实施，根据有关法律、法规，结合本市实际，制定本条例。</p>
-                          <p className="bg-yellow-100 p-2 rounded">第二条 在本市行政区域内制定和实施城市规划，在城市规划区内进行建设，必须遵守本条例。</p>
-                          <p>第三条 城市规划的制定和实施，应当遵循城乡统筹、合理布局、节约用地、集约发展和先规划后建设的原则。</p>
-                          <p>第四条 任何单位和个人都有遵守城市规划的义务，并有权对违反城市规划的行为进行检举和控告。</p>
-                          <p>...</p>
-                        </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                      <div className="text-xs text-slate-600 leading-relaxed space-y-3">
+                        <p>第一章 总则</p>
+                        <p>第一条 为了加强城市规划管理，保障城市规划的实施，根据有关法律、法规，结合本市实际，制定本条例。</p>
+                        <p className="bg-yellow-100 p-2 rounded">第二条 在本市行政区域内制定和实施城市规划，在城市规划区内进行建设，必须遵守本条例。</p>
+                        <p>第三条 城市规划的制定和实施，应当遵循城乡统筹、合理布局、节约用地、集约发展和先规划后建设的原则。</p>
+                        <p>第四条 任何单位和个人都有遵守城市规划的义务，并有权对违反城市规划的行为进行检举和控告。</p>
+                        <p>...</p>
                       </div>
                     </div>
                   </div>
