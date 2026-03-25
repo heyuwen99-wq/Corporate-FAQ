@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, Component } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -828,12 +829,14 @@ function Sidebar({ currentView, setCurrentView, adminSubView, setAdminSubView, u
   const [editTitle, setEditTitle] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target?.closest('[data-chat-menu="true"]')) {
         setActiveMenuId(null);
+        setMenuPosition(null);
       }
     };
 
@@ -1022,10 +1025,22 @@ function Sidebar({ currentView, setCurrentView, adminSubView, setAdminSubView, u
                           </button>
                           {!isCollapsed && (
                             <div data-chat-menu="true" className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setActiveMenuId(activeMenuId === chat.id ? null : chat.id);
+                                  if (activeMenuId === chat.id) {
+                                    setActiveMenuId(null);
+                                    setMenuPosition(null);
+                                  } else {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    const menuWidth = 96;
+                                    let left = rect.left;
+                                    if (left + menuWidth > window.innerWidth) {
+                                      left = rect.right - menuWidth;
+                                    }
+                                    setMenuPosition({ top: rect.bottom + 4, left });
+                                    setActiveMenuId(chat.id);
+                                  }
                                 }}
                                 className={`p-1 hover:text-slate-600 transition-all ${
                                   activeMenuId === chat.id
@@ -1036,34 +1051,39 @@ function Sidebar({ currentView, setCurrentView, adminSubView, setAdminSubView, u
                                 <MoreHorizontal size={16} />
                               </button>
                               
-                              {activeMenuId === chat.id && (
-                                <div 
-                                  className="absolute right-0 top-full mt-1 w-24 bg-white rounded-lg shadow-xl border border-slate-100 py-1 z-[100]"
+                              {activeMenuId === chat.id && menuPosition && createPortal(
+                                <div
+                                  data-chat-menu="true"
+                                  className="fixed w-24 bg-white rounded-lg shadow-xl border border-slate-100 py-1 z-[9999]"
+                                  style={{ top: menuPosition.top, left: menuPosition.left }}
                                 >
-                                  <button 
+                                  <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setEditingChatId(chat.id);
                                       setEditTitle(chat.title);
                                       setActiveMenuId(null);
+                                      setMenuPosition(null);
                                     }}
                                     className="w-full text-left px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 flex items-center gap-2"
                                   >
                                     <Edit2 size={12} />
                                     <span>重命名</span>
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setDeleteConfirmId(chat.id);
                                       setActiveMenuId(null);
+                                      setMenuPosition(null);
                                     }}
                                     className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 flex items-center gap-2"
                                   >
                                     <Trash2 size={12} />
                                     <span>删除</span>
                                   </button>
-                                </div>
+                                </div>,
+                                document.body
                               )}
                             </div>
                           )}
@@ -3212,8 +3232,14 @@ function ChatInterface({ onLogout, currentChatId, setCurrentChatId, onNewChat, c
                       <h3 className="font-bold text-slate-800 truncate">原文预览: {selectedReference}</h3>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6">
-                      <div className="space-y-4">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">切片定位</p>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-xs text-blue-700 leading-relaxed">第二条 在本市行政区域内制定和实施城市规划，在城市规划区内进行建设，必须遵守本条例。</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">原文档内容</p>
                         <div className="text-xs text-slate-600 leading-relaxed space-y-3">
                           <p>第一章 总则</p>
